@@ -127,6 +127,9 @@ void do_cross_validation()
 	double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
 	double *target = Malloc(double,prob.l);
 
+	/** To caluculate precision/recall for each class */
+	int tp = 0, fp = 0, tn = 0, fn = 0;
+
 	svm_cross_validation(&prob,&param,nr_fold,target);
 	if(param.svm_type == EPSILON_SVR ||
 	   param.svm_type == NU_SVR)
@@ -150,10 +153,41 @@ void do_cross_validation()
 	}
 	else
 	{
+		/*
 		for(i=0;i<prob.l;i++)
 			if(target[i] == prob.y[i])
 				++total_correct;
 		printf("Cross Validation Accuracy = %g%%\n",100.0*total_correct/prob.l);
+		*/
+		
+		for(i=0;i<prob.l; i++) {
+			if(prob.y[i] == 1) { // True label = +1
+				if(target[i] == prob.y[i]) {
+					tp++;
+				} else {
+					fn++;
+				}
+			} else { // True label = -1
+				if (target[i] == prob.y[i]) {
+					tn++;
+				} else {
+					fp++;
+				}
+			}
+		}
+
+		printf("\nCross Validation\n");
+		printf("  tp=%d, tn=%d, fp=%d, fn=%d\n", tp, tn, fp, fn);
+		printf("  Accuracy = %g%%\n", 100.0 * ((double)(tp + tn) / (double)(tp + fp + tn + fn)));
+
+		// Precision and recall
+		double precision = ((double)tp / (double)(tp + fp));
+		double recall = ((double)tp / (double)(tp + fn));
+		double f = (2 * precision * recall) / (precision + recall);
+
+		printf("  precision = %g\n", precision);
+		printf("  recall = %g\n", recall);
+		printf("  F value = %g\n\n", f);
 	}
 	free(target);
 }
